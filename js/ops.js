@@ -5,15 +5,18 @@ CABLES.OPS=CABLES.OPS||{};
 
 var Ops=Ops || {};
 Ops.Ui=Ops.Ui || {};
-Ops.Html=Ops.Html || {};
-Ops.Json=Ops.Json || {};
-Ops.Math=Ops.Math || {};
 Ops.User=Ops.User || {};
 Ops.Anim=Ops.Anim || {};
+Ops.Math=Ops.Math || {};
+Ops.Html=Ops.Html || {};
+Ops.Json=Ops.Json || {};
+Ops.Array=Ops.Array || {};
+Ops.Audio=Ops.Audio || {};
 Ops.Value=Ops.Value || {};
 Ops.Cables=Ops.Cables || {};
 Ops.String=Ops.String || {};
 Ops.Trigger=Ops.Trigger || {};
+Ops.Boolean=Ops.Boolean || {};
 Ops.Sidebar=Ops.Sidebar || {};
 Ops.User.alivemachine=Ops.User.alivemachine || {};
 
@@ -3970,6 +3973,792 @@ updateStyle();
 
 Ops.User.alivemachine.Boids03.prototype = new CABLES.Op();
 
+
+
+
+
+// **************************************************************
+// 
+// Ops.String.FilterValidString
+// 
+// **************************************************************
+
+Ops.String.FilterValidString = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+
+const
+    inStr=op.inString("String",""),
+    checkNull=op.inBool("Invalid if null",true),
+    checkUndefined=op.inBool("Invalid if undefined",true),
+    checkEmpty=op.inBool("Invalid if empty",true),
+    checkZero=op.inBool("Invalid if 0",true),
+    outStr=op.outString("Last Valid String"),
+    result=op.outBool("Is Valid");
+
+inStr.onChange=
+checkNull.onChange=
+checkUndefined.onChange=
+checkEmpty.onChange=
+function()
+{
+    const str=inStr.get();
+    var r=true;
+
+    if(r===false)r=false;
+    if(r && checkZero.get() && (str===0 || str==="0")) r=false;
+    if(r && checkNull.get() && str===null) r=false;
+    if(r && checkUndefined.get() && str===undefined) r=false;
+    if(r && checkEmpty.get() && str==="") r=false;
+
+    if(r)outStr.set(str);
+
+    result.set(r);
+
+};
+
+
+};
+
+Ops.String.FilterValidString.prototype = new CABLES.Op();
+CABLES.OPS["a522235d-f220-46ea-bc26-13a5b20ec8c6"]={f:Ops.String.FilterValidString,objName:"Ops.String.FilterValidString"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.String.ConcatMulti
+// 
+// **************************************************************
+
+Ops.String.ConcatMulti = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+
+const addSpacesCheckBox = op.inBool("add spaces",false),
+        newLinesCheckBox = op.inBool("new lines",false),
+        stringPorts = [],
+        result = op.outString("concat string");
+
+
+stringPorts.onChange = addSpacesCheckBox.onChange =
+newLinesCheckBox.onChange = update;
+
+addSpacesCheckBox.hidePort(true);
+newLinesCheckBox.hidePort(true);
+
+for(var i=0; i<8; i++)
+{
+    var p=op.inString("string " + i);
+    stringPorts.push(p);
+    p.onChange = update;
+}
+
+function update()
+{
+    var str = "";
+    var nl = "";
+    var space = addSpacesCheckBox.get();
+
+    for(var i=0; i<stringPorts.length; i++)
+    {
+        const inString=stringPorts[i].get();
+        if(!inString)continue;
+        if(space) str += " ";
+        if(i>0 && newLinesCheckBox.get()) nl = '\n';
+        str += nl;
+        str += inString;
+    }
+    result.set(str);
+}
+
+
+};
+
+Ops.String.ConcatMulti.prototype = new CABLES.Op();
+CABLES.OPS["21d3dcc6-3c5b-4e94-97dc-ef7720e9e00d"]={f:Ops.String.ConcatMulti,objName:"Ops.String.ConcatMulti"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Trigger.TriggerOnChangeString
+// 
+// **************************************************************
+
+Ops.Trigger.TriggerOnChangeString = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    inval=op.inString("String"),
+    next=op.outTrigger("Changed"),
+    outStr=op.outString("Result");
+
+inval.onChange=function()
+{
+    outStr.set(inval.get());
+    next.trigger();
+};
+
+};
+
+Ops.Trigger.TriggerOnChangeString.prototype = new CABLES.Op();
+CABLES.OPS["319d07e0-5cbe-4bc1-89fb-a934fd41b0c4"]={f:Ops.Trigger.TriggerOnChangeString,objName:"Ops.Trigger.TriggerOnChangeString"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Html.CSSProperty_v2
+// 
+// **************************************************************
+
+Ops.Html.CSSProperty_v2 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    inEle = op.inObject("Element"),
+    inProperty = op.inString("Property"),
+    inValue = op.inFloat("Value"),
+    inValueSuffix = op.inString("Value Suffix", "px"),
+    outEle = op.outObject("HTML Element");
+
+op.setPortGroup("Element", [inEle]);
+op.setPortGroup("Attributes", [inProperty, inValue, inValueSuffix]);
+
+inProperty.onChange = updateProperty;
+inValue.onChange = update;
+inValueSuffix.onChange = update;
+let ele = null;
+
+inEle.onChange = inEle.onLinkChanged = function ()
+{
+    if (ele && ele.style)
+    {
+        ele.style[inProperty.get()] = "initial";
+    }
+    update();
+};
+
+function updateProperty()
+{
+    update();
+    op.setUiAttrib({ "extendTitle": inProperty.get() + "" });
+}
+
+function update()
+{
+    ele = inEle.get();
+    if (ele && ele.style)
+    {
+        const str = inValue.get() + inValueSuffix.get();
+        try
+        {
+            // console.log("css",inProperty.get(),str);
+            if (ele.style[inProperty.get()] != str)
+                ele.style[inProperty.get()] = str;
+        }
+        catch (e)
+        {
+            console.log(e);
+        }
+    }
+
+    outEle.set(inEle.get());
+}
+
+
+};
+
+Ops.Html.CSSProperty_v2.prototype = new CABLES.Op();
+CABLES.OPS["c179aa0e-b558-4130-8c2d-2deab2919a07"]={f:Ops.Html.CSSProperty_v2,objName:"Ops.Html.CSSProperty_v2"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Boolean.MonoFlop
+// 
+// **************************************************************
+
+Ops.Boolean.MonoFlop = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    trigger=op.inTriggerButton("Trigger"),
+    duration=op.inValue("Duration",1),
+    valueTrue=op.inValue("Value True",1),
+    valueFalse=op.inValue("Value False",0),
+    outAct=op.outTrigger("Activated"),
+    result=op.outValue("Result",false);
+
+var lastTimeout=-1;
+
+trigger.onTriggered=function()
+{
+    if(result.get()==valueFalse.get())outAct.trigger();
+    result.set(valueTrue.get());
+
+    clearTimeout(lastTimeout);
+    lastTimeout=setTimeout(function()
+    {
+        result.set(valueFalse.get());
+    },duration.get()*1000);
+
+};
+
+};
+
+Ops.Boolean.MonoFlop.prototype = new CABLES.Op();
+CABLES.OPS["3a4b0a78-4172-41c7-8248-95cb0856ecc8"]={f:Ops.Boolean.MonoFlop,objName:"Ops.Boolean.MonoFlop"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Html.WindowInfo
+// 
+// **************************************************************
+
+Ops.Html.WindowInfo = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    outWidth=op.outNumber("clientWidth"),
+    outHeight=op.outNumber("clientHeight");
+
+
+window.addEventListener('resize', update);
+
+update();
+
+function update()
+{
+    outWidth.set(window.innerWidth);
+    outHeight.set(window.innerHeight);
+}
+
+
+
+};
+
+Ops.Html.WindowInfo.prototype = new CABLES.Op();
+CABLES.OPS["9655045c-3539-457d-be65-a1456a58906a"]={f:Ops.Html.WindowInfo,objName:"Ops.Html.WindowInfo"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Math.TriggerRandomNumber_v2
+// 
+// **************************************************************
+
+Ops.Math.TriggerRandomNumber_v2 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    exe=op.inTriggerButton('Generate'),
+    min=op.inValue("min",0),
+    max=op.inValue("max",1),
+    outTrig = op.outTrigger("next"),
+    result=op.outValue("result"),
+    inInteger=op.inValueBool("Integer",false);
+
+exe.onTriggered=genRandom;
+max.onChange=genRandom;
+min.onChange=genRandom;
+inInteger.onChange=genRandom;
+
+op.setPortGroup("Value Range",[min,max]);
+genRandom();
+
+function genRandom()
+{
+    var r=(Math.random()*(max.get()-min.get()))+min.get();
+    if(inInteger.get())r=Math.floor((Math.random()*((max.get()-min.get()+1)))+min.get());
+    result.set(r);
+    outTrig.trigger();
+}
+
+
+};
+
+Ops.Math.TriggerRandomNumber_v2.prototype = new CABLES.Op();
+CABLES.OPS["26f446cc-9107-4164-8209-5254487fa132"]={f:Ops.Math.TriggerRandomNumber_v2,objName:"Ops.Math.TriggerRandomNumber_v2"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Math.Math
+// 
+// **************************************************************
+
+Ops.Math.Math = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const num0 = op.inFloat("number 0",0),
+    num1 = op.inFloat("number 1",0),
+    mathDropDown = op.inSwitch("math mode",['+','-','*','/','%','min','max'], "+"),
+    result = op.outNumber("result");
+
+var mathFunc;
+
+num0.onChange = num1.onChange = update;
+mathDropDown.onChange = onFilterChange;
+
+var n0=0;
+var n1=0;
+
+const mathFuncAdd = function(a,b){return a+b};
+const mathFuncSub = function(a,b){return a-b};
+const mathFuncMul = function(a,b){return a*b};
+const mathFuncDiv = function(a,b){return a/b};
+const mathFuncMod = function(a,b){return a%b};
+const mathFuncMin = function(a,b){return Math.min(a,b)};
+const mathFuncMax = function(a,b){return Math.max(a,b)};
+
+
+function onFilterChange()
+{
+    var mathSelectValue = mathDropDown.get();
+
+    if(mathSelectValue == '+')         mathFunc = mathFuncAdd;
+    else if(mathSelectValue == '-')    mathFunc = mathFuncSub;
+    else if(mathSelectValue == '*')    mathFunc = mathFuncMul;
+    else if(mathSelectValue == '/')    mathFunc = mathFuncDiv;
+    else if(mathSelectValue == '%')    mathFunc = mathFuncMod;
+    else if(mathSelectValue == 'min')  mathFunc = mathFuncMin;
+    else if(mathSelectValue == 'max')  mathFunc = mathFuncMax;
+    update();
+    op.setUiAttrib({"extendTitle":mathSelectValue});
+}
+
+function update()
+{
+   n0 = num0.get();
+   n1 = num1.get();
+
+   result.set(mathFunc(n0,n1));
+}
+
+onFilterChange();
+
+
+};
+
+Ops.Math.Math.prototype = new CABLES.Op();
+CABLES.OPS["e9fdcaca-a007-4563-8a4d-e94e08506e0f"]={f:Ops.Math.Math,objName:"Ops.Math.Math"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Audio.SpeechRecognition
+// 
+// **************************************************************
+
+Ops.Audio.SpeechRecognition = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    inLang=op.inString("Language","us-US"),
+    active=op.inBool("Active",true),
+    result=op.outString("Result"),
+    confidence=op.outNumber("Confidence"),
+    outSupported=op.outBool("Supported",false),
+    outResult=op.outTrigger("New Result",""),
+    outActive=op.outBool("Started",false);
+
+
+active.onChange=startStop;
+
+window.SpeechRecognition = window.SpeechRecognition||window.webkitSpeechRecognition || window.mozSpeechRecognition;
+
+var recognition=null;
+
+inLang.onChange=changeLang;
+
+function startStop()
+{
+    if(!recognition) return;
+
+    try{
+
+        if(active.get()!=outActive.get())
+        {
+            if(active.get()) recognition.start();
+            else recognition.abort();
+        }
+
+    }
+    catch(e)
+    {
+        console.log(e);
+    }
+}
+
+
+op.init=function()
+{
+    startStop();
+};
+
+function changeLang()
+{
+    if(!recognition)return;
+
+    recognition.lang = inLang.get();
+    recognition.stop();
+
+    setTimeout(function(){
+        try{recognition.start();}catch(e){}},500);
+
+
+
+}
+
+startAPI();
+
+function startAPI()
+{
+    if(window.SpeechRecognition)
+    {
+        outSupported.set(true);
+
+        if(recognition) recognition.abort();
+
+        recognition=new SpeechRecognition();
+
+        recognition.lang = inLang.get();
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 0;
+        recognition.continuous=true;
+        SpeechRecognition.interimResults=true;
+
+
+        recognition.onstart = function() { outActive.set(true); };
+        recognition.onstop = function(event) { outActive.set(false); };
+
+        recognition.onresult = function(event) { op.log('recognition result'); };
+        recognition.onerror = function(event) { op.log('recognition error',result); };
+
+
+        recognition.onresult = function(event)
+        {
+            const idx=event.results.length-1;
+
+            result.set(event.results[idx][0].transcript);
+            confidence.set(event.results[idx][0].confidence);
+            op.log('You said: ', event.results[idx][0].transcript);
+            outResult.trigger();
+        };
+
+    }
+
+}
+
+
+
+};
+
+Ops.Audio.SpeechRecognition.prototype = new CABLES.Op();
+CABLES.OPS["e7ccd7a9-54e9-4637-b8cb-011708dfc0dd"]={f:Ops.Audio.SpeechRecognition,objName:"Ops.Audio.SpeechRecognition"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Sidebar.DropDown_v2
+// 
+// **************************************************************
+
+Ops.Sidebar.DropDown_v2 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+// inputs
+const parentPort = op.inObject("Link");
+const labelPort = op.inString("Text", "Value");
+const valuesPort = op.inArray("Values");
+const defaultValuePort = op.inString("Default", "");
+const inGreyOut = op.inBool("Grey Out", false);
+const inVisible = op.inBool("Visible", true);
+
+
+// outputs
+const siblingsPort = op.outObject("Children");
+const valuePort = op.outString("Result", defaultValuePort.get());
+const outIndex = op.outNumber("Index");
+
+// vars
+const el = document.createElement("div");
+el.classList.add("sidebar__item");
+el.classList.add("sidebar__select");
+const label = document.createElement("div");
+label.classList.add("sidebar__item-label");
+const labelText = document.createTextNode(labelPort.get());
+label.appendChild(labelText);
+el.appendChild(label);
+const input = document.createElement("select");
+input.classList.add("sidebar__select-select");
+el.appendChild(input);
+input.addEventListener("input", onInput);
+
+const greyOut = document.createElement("div");
+greyOut.classList.add("sidebar__greyout");
+el.appendChild(greyOut);
+greyOut.style.display = "none";
+
+inGreyOut.onChange = function ()
+{
+    greyOut.style.display = inGreyOut.get() ? "block" : "none";
+};
+
+inVisible.onChange = function ()
+{
+    el.style.display = inVisible.get() ? "block" : "none";
+};
+
+
+// events
+parentPort.onChange = onParentChanged;
+labelPort.onChange = onLabelTextChanged;
+defaultValuePort.onChange = onDefaultValueChanged;
+op.onDelete = onDelete;
+valuesPort.onChange = onValuesPortChange;
+
+let options = [];
+// functions
+
+op.onLoaded = function ()
+{
+    valuePort.set(defaultValuePort.get());
+};
+
+function onValuesPortChange()
+{
+    // remove all children
+    while (input.lastChild)
+    {
+        input.removeChild(input.lastChild);
+    }
+    options = valuesPort.get();
+    const defaultValue = defaultValuePort.get();
+    if (options)
+    {
+        options.forEach(function (option)
+        {
+            const optionEl = document.createElement("option");
+            optionEl.setAttribute("value", option);
+            if (option === defaultValue)
+            {
+                optionEl.setAttribute("selected", "");
+            }
+            const textEl = document.createTextNode(option);
+            optionEl.appendChild(textEl);
+            input.appendChild(optionEl);
+        });
+    }
+    else
+    {
+        valuePort.set("");
+    }
+    setSelectedProperty(); /* set the selected property for the default value */
+}
+
+function setSelectedProperty()
+{
+    const defaultItem = defaultValuePort.get();
+    const optionElements = input.querySelectorAll("option");
+    optionElements.forEach(function (optionElement, index)
+    {
+        if (optionElement.value === defaultItem)
+        {
+            optionElement.setAttribute("selected", "");
+            outIndex.set(index);
+        }
+        else
+        {
+            optionElement.removeAttribute("selected");
+        }
+    });
+}
+
+function onInput(ev)
+{
+    valuePort.set(ev.target.value);
+    outIndex.set(options.indexOf(ev.target.value));
+}
+
+function onDefaultValueChanged()
+{
+    const defaultValue = defaultValuePort.get();
+    valuePort.set(defaultValue);
+    // input.value = defaultValue;
+    setSelectedProperty();
+}
+
+function onLabelTextChanged()
+{
+    const labelText = labelPort.get();
+    label.textContent = labelText;
+    if (CABLES.UI)
+    {
+        op.setTitle("Dropdown: " + labelText);
+    }
+}
+
+function onParentChanged()
+{
+    const parent = parentPort.get();
+    if (parent && parent.parentElement)
+    {
+        parent.parentElement.appendChild(el);
+        siblingsPort.set(null);
+        siblingsPort.set(parent);
+    }
+    else
+    { // detach
+        if (el.parentElement)
+        {
+            el.parentElement.removeChild(el);
+        }
+    }
+}
+
+function showElement(el)
+{
+    if (el)
+    {
+        el.style.display = "block";
+    }
+}
+
+function hideElement(el)
+{
+    if (el)
+    {
+        el.style.display = "none";
+    }
+}
+
+function onDelete()
+{
+    removeElementFromDOM(el);
+}
+
+function removeElementFromDOM(el)
+{
+    if (el && el.parentNode && el.parentNode.removeChild)
+    {
+        el.parentNode.removeChild(el);
+    }
+}
+
+
+};
+
+Ops.Sidebar.DropDown_v2.prototype = new CABLES.Op();
+CABLES.OPS["7b3f93d6-4de1-41fd-aa26-e74c8285c662"]={f:Ops.Sidebar.DropDown_v2,objName:"Ops.Sidebar.DropDown_v2"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Array.ParseArray_v2
+// 
+// **************************************************************
+
+Ops.Array.ParseArray_v2 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const text = op.inStringEditor("text", "1,2,3"),
+    separator = op.inString("separator", ","),
+    toNumber = op.inValueBool("Numbers", true),
+    parsed = op.outTrigger("Parsed"),
+    arr = op.outArray("array"),
+    len = op.outValue("length");
+
+text.onChange = separator.onChange = toNumber.onChange = parse;
+
+parse();
+
+function parse()
+{
+    if (!text.get())
+    {
+        arr.set(null);
+        arr.set([]);
+        len.set(0);
+        return;
+    }
+
+    const r = text.get().split(separator.get());
+
+    if (r[r.length - 1] === "") r.length -= 1;
+
+    len.set(r.length);
+
+    op.setUiError("notnum", null);
+    if (toNumber.get())
+    {
+        let hasStrings = false;
+        for (let i = 0; i < r.length; i++)
+        {
+            r[i] = Number(r[i]);
+            if (!CABLES.UTILS.isNumeric(r[i]))
+            {
+                hasStrings = true;
+            }
+        }
+        if (hasStrings)
+        {
+            op.setUiError("notnum", "Parse Error / Not all values numerical!");
+        }
+    }
+
+    arr.set(null);
+    arr.set(r);
+    parsed.trigger();
+}
+
+
+};
+
+Ops.Array.ParseArray_v2.prototype = new CABLES.Op();
+CABLES.OPS["c974de41-4ce4-4432-b94d-724741109c71"]={f:Ops.Array.ParseArray_v2,objName:"Ops.Array.ParseArray_v2"};
 
 
 window.addEventListener('load', function(event) {
