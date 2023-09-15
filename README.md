@@ -3,7 +3,7 @@
 <br>The Avatar
 </h1>
   
-  <img src="https://github.com/alivemachine/Avatar/blob/main/screenshot.png" />
+  <img src="https://github.com/alivemachine/Avatar/blob/03/screenshot.png" />
   <img src="https://alivemachine.io/image/galeriehd/avatar03.jpg" />
   
 <h3>◦ An Avatar for your mood</h3>
