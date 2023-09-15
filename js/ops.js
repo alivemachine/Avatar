@@ -10,6 +10,7 @@ Ops.Json=Ops.Json || {};
 Ops.Math=Ops.Math || {};
 Ops.User=Ops.User || {};
 Ops.Anim=Ops.Anim || {};
+Ops.Value=Ops.Value || {};
 Ops.Cables=Ops.Cables || {};
 Ops.String=Ops.String || {};
 Ops.Trigger=Ops.Trigger || {};
@@ -312,270 +313,6 @@ op.patch.addEventListener("performance",update);
 
 Ops.Cables.FPS.prototype = new CABLES.Op();
 CABLES.OPS["1bbd3b97-d8cd-4ff6-a6a4-f5121c28d29f"]={f:Ops.Cables.FPS,objName:"Ops.Cables.FPS"};
-
-
-
-
-// **************************************************************
-// 
-// Ops.User.alivemachine.Boids03
-// 
-// **************************************************************
-
-Ops.User.alivemachine.Boids03 = function()
-{
-CABLES.Op.apply(this,arguments);
-const op=this;
-const attachments={};
-var active = op.inBool("active",true);
-var cheight = op.inInt("height",300);
-var cwidth = op.inInt("width",300);
-var scIn = op.inInt("starlingCount",10);
-var homIn = op.inFloatSlider("homing",1);
-var alIn = op.inFloatSlider("alignment",1);
-var coIn = op.inFloatSlider("cohesion",1);
-var sepIn = op.inFloatSlider("separation",1);
-var sizeIn = op.inFloat("size",1);
-var hcIn = op.inInt("homeChangeInterval",3);
-var speedIn = op.inFloat("speed",1);
-var distIn = op.inFloat("neighbourDistance",400);
-var randhoIn = op.inBool("randomiseHome",true);
-var surfaceIn = op.inFloatSlider("surface",.1);
-var particle = op.inString("image");
-var imgAlpha = op.inFloatSlider("image alpha");
-var hueRot = op.inFloat("HueRotate",0);
-var rt = op.inFloatSlider("rt",1),
-    gt = op.inFloatSlider("gt",0),
-    bt = op.inFloatSlider("bt",1),
-    at = op.inFloatSlider("at",1),
-    blurt = op.inFloatSlider("blurt",1);
-var rb = op.inFloatSlider("rb",1),
-    gb = op.inFloatSlider("gb",0),
-    bb = op.inFloatSlider("bb",1),
-    ab = op.inFloatSlider("ab",1),
-    blurb = op.inFloatSlider("blurb",1);
-var comp=op.inValueSelect("compositing",['source-over','source-in','source-out','source-atop','destination-over','destination-in','destination-out','destination-atop','lighter','copy','xor','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion','hue','saturation','color','luminosity']);
-var inStyle = op.inValueEditor("Style", "position:absolute;z-index:9999;", "none");
-
-var outCanvas=op.outObject("canvas");
-
-comp.set('source-over');
-inStyle.onChange = updateStyle;
-
-op.setPortGroup('Top',[rt,gt,bt,at, blurt]);
-op.setPortGroup('Bottom',[rb,gb,bb,ab, blurb]);
-
-var img = new Image();
-img.crossOrigin = 'Anonymous';
-particle.onChange=reloadPar;
-function reloadPar(){
-    img.src = particle.get();
-}
-var Murmuration = function () {
-  "use strict";
-
-  function s(t, i, e) {
-    void 0 === t && (t = 0), void 0 === i && (i = 0), void 0 === e && (e = 0), this.x = t, this.y = i, this.z = e
-  }
-  s.prototype.getDistanceFrom = function (t) {
-    var i = {};
-    return i.x = this.x - t.x, i.y = this.y - t.y, i.z = this.z - t.z, Math.abs(Math.sqrt(i.x * i.x + i.y * i.y + i.z * i.z))
-  }, s.prototype.normalise = function (t) {
-    var i = Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z);
-    this.x = t * (this.x / i), this.y = t * (this.y / i), this.z = t * (this.z / i)
-  }, s.prototype.add = function (t) {
-    this.x += t.x, this.y += t.y, this.z += t.z
-  }, s.prototype.multiply = function (t) {
-    this.x *= t, this.y *= t, this.z *= t
-  }, s.prototype.reset = function () {
-    this.x = 0, this.y = 0, this.z = 0
-  }, s.prototype.toString = function () {
-    return "<" + this.x + "," + this.y + "," + this.z + ">"
-  };
-
-  function t(t) {
-    var i = this;
-    this.starlingCount = scIn.get(), this.homing = 1, this.alignment = 1, this.cohesion = 1, this.separation = 1, this.randomiseHome = !0, this.homeChangeInterval = 1e3, this.neighbourDistance = 400, this.parentElem = document.body, this.worldWidth = 100, this.worldHeight = 100, this.home = new s(this.worldWidth / 2, this.worldHeight / 2, 0), this.starlings = [], this.homingMod = .024 * this.homing, this.alignmentMod = 18e-5 * this.alignment, this.cohesionMod = 6 * this.cohesion, this.separationMod = 5.994 * this.separation, this.onUpdate = function (t) {}, Object.assign(this, t);
-    for (var e = 0; e < this.starlingCount; e++) this.addStarling();
-    this.randomiseHome && (this._changeHomeFunc = function () {
-      i._changeHome(), setTimeout(i._changeHomeFunc, i.homeChangeInterval)
-    }, this._changeHomeFunc()), this.averageDistance = new s, this.averagePosition = new s, this.averageVelocity = new s, this.homingVelocity = new s;
-  }
-
-  var a = function (s) {
-    function t(t, i, e) {
-      s.call(this, t, i, e), this.zMod = 1e-4, this.velocity = new s(Math.random(), Math.random(), Math.random()), this.maxSpeed = speedIn.get(), this.skill = Math.random() / 10, this.skillVariant = new s
-    }
-    return s && (t.__proto__ = s), ((t.prototype = Object.create(s && s.prototype)).constructor = t).prototype.update = function () {
-      this.skillVariant.x = (Math.random() - .5) * this.skill, this.skillVariant.y = (Math.random() - .5) * this.skill, this.skillVariant.z = (Math.random() - .5) * this.skill, this.velocity.normalise(this.maxSpeed*speedIn.get()), this.velocity.add(this.skillVariant), this.x += this.velocity.x, this.y += this.velocity.y, this.z += this.velocity.z, this.skillVariant.reset()
-    }, t
-  }(s);
-  return t.prototype.addStarling = function () {
-    var t = Math.random() * this.worldWidth / 4 + this.worldWidth / 4,
-      i = Math.random() * this.worldHeight / 4 + this.worldHeight / 4,
-      e = new a(t, i, 0);
-    this.starlings.push(e)
-  }, t.prototype._changeHome = function () {
-    this.home.x = this.worldWidth*surfaceIn.get() * (Math.random()*2-1)+this.worldWidth/2, this.home.y = this.worldHeight*surfaceIn.get() * (Math.random()*2-1)+this.worldHeight/2, this.home.z = .1
-  }, t.prototype.run = function () {
-    var t = this;
-    requestAnimationFrame(function () {
-      if(active.get()==true){ return t.run() }else{return}
-    }), this.updateStarlings(), this.onUpdate(this.starlings)
-  }, t.prototype.alignStarling = function (t) {
-    for (var i = 0, e = 0; e < this.starlingCount; e++) {
-      var s = this.starlings[e];
-      t != s && t.getDistanceFrom(s) < this.neighbourDistance && (this.averageVelocity.x = s.velocity.x, this.averageVelocity.y = s.velocity.y, this.averageVelocity.z = s.velocity.z, i++)
-    }
-    this.averageVelocity.x /= i, this.averageVelocity.y /= i, this.averageVelocity.z /= i, this.averageVelocity.normalise(1), this.averageVelocity.multiply(this.alignmentMod), 0 < i && t.velocity.add(this.averageVelocity), this.averageVelocity.reset()
-  }, t.prototype.cohereStarling = function (t) {
-    for (var i = 0, e = 0; e < this.starlingCount; e++) {
-      var s = this.starlings[e];
-      t != s && (t.getDistanceFrom(s) < this.neighbourDistance && (this.averageDistance.x = s.x - t.x, this.averageDistance.y = s.y - t.y, this.averageDistance.z = s.z - t.z, i++), this.averagePosition.x += s.x, this.averagePosition.y += s.y, this.averagePosition.z += s.z)
-    }
-    this.averagePosition.x /= this.starlings.length - 1, this.averagePosition.y /= this.starlings.length - 1, this.averagePosition.z /= this.starlings.length - 1, this.averageDistance.x /= i, this.averageDistance.y /= i, this.averageDistance.z /= i, this.averageDistance.normalise(1), this.averageDistance.multiply(this.cohesionMod), 0 < i && t.velocity.add(this.averageDistance), this.averageDistance.reset(), this.averagePosition.reset()
-  }, t.prototype.separateStarling = function (t) {
-    for (var i = 0, e = 0; e < this.starlingCount; e++) {
-      var s = this.starlings[e];
-      t != s && t.getDistanceFrom(s) < this.neighbourDistance && (this.averageDistance.x = s.x - t.x, this.averageDistance.y = s.y - t.y, this.averageDistance.z = s.z - t.z, i++)
-    }
-    this.averageDistance.x /= i, this.averageDistance.y /= i, this.averageDistance.z /= i, this.averageDistance.normalise(1), this.averageDistance.multiply(this.separationMod), 0 < i && (t.velocity.x += -1 * this.averageDistance.x, t.velocity.y += -1 * this.averageDistance.y, t.velocity.z += -1 * this.averageDistance.z), this.averageDistance.reset()
-  }, t.prototype.homeStarling = function (t) {
-    this.homingVelocity.x = this.home.x - t.x, this.homingVelocity.y = this.home.y - t.y, this.homingVelocity.z = this.home.z - t.z, this.homingVelocity.normalise(1), this.homingVelocity.multiply(this.homingMod * (10 * Math.random())), t.velocity.add(this.homingVelocity), this.homingVelocity.reset()
-  }, t.prototype.updateStarlings = function () {
-    for (var t = 0; t < sc; t++) {
-      var i = this.starlings[t];
-      this.alignStarling(i), this.cohereStarling(i), this.separateStarling(i), this.homeStarling(i), i.update()
-    }
-  }, t
-}();
-
-
-
-
-    var sc = scIn.get();
-    var size = sizeIn.get();
-	var canvas = document.createElement("canvas");
-	var ctx = canvas.getContext("2d");
-	//canvas.style.backgroundColor = 'grey';
-	canvas.height=cheight.get();
-	canvas.width=cwidth.get();
-	outCanvas.set(canvas);
-
-
-
-
-    var murmuration;
-function newmurmur(){
-		 murmuration = new Murmuration({
-			worldWidth: canvas.width,
-			worldHeight: canvas.height,
-			starlingCount: sc,
-			onUpdate: function(starlings) {
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				for(let i = 0; i < sc; i++) {
-					let scale 	  = ((100 * (starlings[i].z * starlings[i].zMod)))+size;
-					let transform = `scale(${scale < 0 ? 0 : scale})`;
-					let left 	  = `${starlings[i].x}`;
-					let bottom 	  = `${starlings[i].y}`;
-					//Object.assign(letters[i].style,{transform,left,bottom});
-
-					ctx.beginPath();
-					ctx.globalCompositeOperation = comp.get();
-					ctx.arc(left, bottom, scale, 0, Math.PI * 2);
-					//ctx.rect(left, bottom, scale, scale);
-					ctx.globalAlpha = imgAlpha.get();
-					ctx.drawImage(img, left-scale/2, bottom-scale/2, scale, scale);
-
-					var r = lerp(rb.get(), rt.get(), i/sc);
-					var g = lerp(gb.get(), gt.get(), i/sc);
-					var b = lerp(bb.get(), bt.get(), i/sc);
-					var a = lerp(ab.get(), at.get(), i/sc);
-
-					var blur = lerp(blurb.get(), blurt.get(), i/sc)*100;
-					var hr = 0;
-					ctx.filter = 'blur('+blur+'px)';
-					//ctx.filter = 'hue-rotate('+hr+'deg)';
-					ctx.fillStyle = "rgba("+r*255+","+g*255+","+b*255+","+a+")";
-					ctx.fill();
-
-					ctx.closePath();
-				}
-			}
-		});
-	murmuration.run();
-}
-newmurmur();
-
-function lerp(a, b, f) {
-    return (a * (1.0 - f)) + (b * f);
-}
-
-
-
-active.onChange=activate;
-randhoIn.onChange=scIn.onChange=updateCount;
-cheight.onChange=cwidth.onChange=updateStyle;
-surfaceIn.onChange=distIn.onChange=homIn.onChange=alIn.onChange=coIn.onChange=speedIn.onChange=sepIn.onChange=hcIn.onChange=sizeIn.onChange=update;
-
-function activate(){
-    if(active.get()==true){
-        canvas.style.display='block';
-        murmuration.run();
-    }else{
-        canvas.style.display='none';
-    }
-
-}
-function update(){
-    murmuration.homingMod = homIn.get()*.024;
-    murmuration.alignmentMod = alIn.get()*18e-5;
-    murmuration.cohesionMod = coIn.get()*6;
-    murmuration.separationMod = sepIn.get()*5.994;
-    size = sizeIn.get();
-    murmuration.homeChangeInterval = hcIn.get()*1000;
-    murmuration.neighbourDistance = distIn.get();
-
-    //homingVelocity.x = speedIn.get();
-   // homingVelocity.y = speedIn.get();
-}
-function updateCount(){
-    if(sc<0){sc = 0;}else{sc = scIn.get();}
-    if(murmuration.starlings.length < sc){
-        murmuration.addStarling();
-        updateCount();
-    }else if(murmuration.starlings.length > sc){
-        murmuration.starlings.pop();
-        console.log(murmuration.starlings);
-        updateCount();
-    }else{
-        murmuration.starlingCount=sc;
-        console.log(murmuration.starlings.length);
-        murmuration.randomiseHome=randhoIn.get();
-    }
-
-}
-
-function updateStyle()
-{
-    if (inStyle.get() != canvas.style)
-    {
-        canvas.setAttribute("style", inStyle.get());
-    }
-    canvas.height=cheight.get();
-	canvas.width=cwidth.get();
-	murmuration.worldWidth = canvas.width;
-	murmuration.worldHeight = canvas.height;
-	outCanvas.set(canvas);
-}
-updateStyle();
-
-
-
-};
-
-Ops.User.alivemachine.Boids03.prototype = new CABLES.Op();
-
 
 
 
@@ -1780,163 +1517,6 @@ function removeElementFromDOM(el) {
 
 Ops.Sidebar.SidebarText_v2.prototype = new CABLES.Op();
 CABLES.OPS["cc591cc3-ff23-4817-907c-e5be7d5c059d"]={f:Ops.Sidebar.SidebarText_v2,objName:"Ops.Sidebar.SidebarText_v2"};
-
-
-
-
-// **************************************************************
-// 
-// Ops.Sidebar.NumberInput_v2
-// 
-// **************************************************************
-
-Ops.Sidebar.NumberInput_v2 = function()
-{
-CABLES.Op.apply(this,arguments);
-const op=this;
-const attachments={};
-// inputs
-const parentPort = op.inObject("Link");
-const labelPort = op.inString("Text", "Number");
-const inputValuePort = op.inValue("Input", 0);
-const setDefaultValueButtonPort = op.inTriggerButton("Set Default");
-const defaultValuePort = op.inValue("Default", 0);
-defaultValuePort.setUiAttribs({ "hidePort": true, "greyout": true });
-
-// outputs
-const siblingsPort = op.outObject("Children");
-const valuePort = op.outValue("Result", defaultValuePort.get());
-
-// vars
-const el = document.createElement("div");
-el.classList.add("sidebar__item");
-el.classList.add("sidebar__text-input");
-const label = document.createElement("div");
-label.classList.add("sidebar__item-label");
-const labelTextNode = document.createTextNode(labelPort.get());
-label.appendChild(labelTextNode);
-el.appendChild(label);
-// var inputWrapper = document.createElement('div');
-// inputWrapper.classList.add('sidebar__text-input-input-wrapper');
-// el.appendChild(inputWrapper);
-const input = document.createElement("input");
-input.classList.add("sidebar__text-input-input");
-input.setAttribute("type", "text");
-input.setAttribute("value", defaultValuePort.get());
-// inputWrapper.appendChild(input);
-el.appendChild(input);
-input.addEventListener("input", onInput);
-
-// events
-parentPort.onChange = onParentChanged;
-labelPort.onChange = onLabelTextChanged;
-defaultValuePort.onChange = onDefaultValueChanged;
-op.onDelete = onDelete;
-inputValuePort.onChange = onInputValuePortChanged;
-setDefaultValueButtonPort.onTriggered = setDefaultValue;
-
-// functions
-
-function setDefaultValue()
-{
-    defaultValuePort.set(parseFloat(inputValuePort.get()));
-    if (CABLES.UI && op.isCurrentUiOp())
-    {
-        gui.opParams.show(op); /* update DOM */
-    }
-}
-
-function onInputValuePortChanged()
-{
-    let val = parseFloat(inputValuePort.get());
-    if (isNaN(val)) { val = 0; }
-    input.value = val;
-    valuePort.set(val);
-}
-
-function onInput(ev)
-{
-    let newVal = parseFloat(ev.target.value);
-    if (isNaN(newVal)) { newVal = 0; }
-    valuePort.set(newVal);
-    inputValuePort.set(newVal);
-    if (CABLES.UI && op.isCurrentUiOp())
-    {
-        gui.opParams.show(op); /* update DOM */
-    }
-}
-
-function onDefaultValueChanged()
-{
-    /*
-    var defaultValue = defaultValuePort.get();
-    valuePort.set(defaultValue);
-    input.value = defaultValue;
-    */
-}
-
-function onLabelTextChanged()
-{
-    const labelText = labelPort.get();
-    label.textContent = labelText;
-    if (CABLES.UI)
-    {
-        op.setTitle("Number Input: " + labelText);
-    }
-}
-
-function onParentChanged()
-{
-    const parent = parentPort.get();
-    if (parent && parent.parentElement)
-    {
-        parent.parentElement.appendChild(el);
-        siblingsPort.set(null);
-        siblingsPort.set(parent);
-    }
-    else
-    { // detach
-        if (el.parentElement)
-        {
-            el.parentElement.removeChild(el);
-        }
-    }
-}
-
-function showElement(element)
-{
-    if (element)
-    {
-        element.style.display = "block";
-    }
-}
-
-function hideElement(element)
-{
-    if (element)
-    {
-        element.style.display = "none";
-    }
-}
-
-function onDelete()
-{
-    removeElementFromDOM(el);
-}
-
-function removeElementFromDOM(element)
-{
-    if (element && element.parentNode && element.parentNode.removeChild)
-    {
-        element.parentNode.removeChild(element);
-    }
-}
-
-
-};
-
-Ops.Sidebar.NumberInput_v2.prototype = new CABLES.Op();
-CABLES.OPS["c4f3f1d7-de07-4c06-921e-32baeef4fc68"]={f:Ops.Sidebar.NumberInput_v2,objName:"Ops.Sidebar.NumberInput_v2"};
 
 
 
@@ -3170,6 +2750,163 @@ CABLES.OPS["a56d3edd-06ad-44ed-9810-dbf714600c67"]={f:Ops.Html.CSS_v2,objName:"O
 
 // **************************************************************
 // 
+// Ops.Sidebar.NumberInput_v2
+// 
+// **************************************************************
+
+Ops.Sidebar.NumberInput_v2 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+// inputs
+const parentPort = op.inObject("Link");
+const labelPort = op.inString("Text", "Number");
+const inputValuePort = op.inValue("Input", 0);
+const setDefaultValueButtonPort = op.inTriggerButton("Set Default");
+const defaultValuePort = op.inValue("Default", 0);
+defaultValuePort.setUiAttribs({ "hidePort": true, "greyout": true });
+
+// outputs
+const siblingsPort = op.outObject("Children");
+const valuePort = op.outValue("Result", defaultValuePort.get());
+
+// vars
+const el = document.createElement("div");
+el.classList.add("sidebar__item");
+el.classList.add("sidebar__text-input");
+const label = document.createElement("div");
+label.classList.add("sidebar__item-label");
+const labelTextNode = document.createTextNode(labelPort.get());
+label.appendChild(labelTextNode);
+el.appendChild(label);
+// var inputWrapper = document.createElement('div');
+// inputWrapper.classList.add('sidebar__text-input-input-wrapper');
+// el.appendChild(inputWrapper);
+const input = document.createElement("input");
+input.classList.add("sidebar__text-input-input");
+input.setAttribute("type", "text");
+input.setAttribute("value", defaultValuePort.get());
+// inputWrapper.appendChild(input);
+el.appendChild(input);
+input.addEventListener("input", onInput);
+
+// events
+parentPort.onChange = onParentChanged;
+labelPort.onChange = onLabelTextChanged;
+defaultValuePort.onChange = onDefaultValueChanged;
+op.onDelete = onDelete;
+inputValuePort.onChange = onInputValuePortChanged;
+setDefaultValueButtonPort.onTriggered = setDefaultValue;
+
+// functions
+
+function setDefaultValue()
+{
+    defaultValuePort.set(parseFloat(inputValuePort.get()));
+    if (CABLES.UI && op.isCurrentUiOp())
+    {
+        gui.opParams.show(op); /* update DOM */
+    }
+}
+
+function onInputValuePortChanged()
+{
+    let val = parseFloat(inputValuePort.get());
+    if (isNaN(val)) { val = 0; }
+    input.value = val;
+    valuePort.set(val);
+}
+
+function onInput(ev)
+{
+    let newVal = parseFloat(ev.target.value);
+    if (isNaN(newVal)) { newVal = 0; }
+    valuePort.set(newVal);
+    inputValuePort.set(newVal);
+    if (CABLES.UI && op.isCurrentUiOp())
+    {
+        gui.opParams.show(op); /* update DOM */
+    }
+}
+
+function onDefaultValueChanged()
+{
+    /*
+    var defaultValue = defaultValuePort.get();
+    valuePort.set(defaultValue);
+    input.value = defaultValue;
+    */
+}
+
+function onLabelTextChanged()
+{
+    const labelText = labelPort.get();
+    label.textContent = labelText;
+    if (CABLES.UI)
+    {
+        op.setTitle("Number Input: " + labelText);
+    }
+}
+
+function onParentChanged()
+{
+    const parent = parentPort.get();
+    if (parent && parent.parentElement)
+    {
+        parent.parentElement.appendChild(el);
+        siblingsPort.set(null);
+        siblingsPort.set(parent);
+    }
+    else
+    { // detach
+        if (el.parentElement)
+        {
+            el.parentElement.removeChild(el);
+        }
+    }
+}
+
+function showElement(element)
+{
+    if (element)
+    {
+        element.style.display = "block";
+    }
+}
+
+function hideElement(element)
+{
+    if (element)
+    {
+        element.style.display = "none";
+    }
+}
+
+function onDelete()
+{
+    removeElementFromDOM(el);
+}
+
+function removeElementFromDOM(element)
+{
+    if (element && element.parentNode && element.parentNode.removeChild)
+    {
+        element.parentNode.removeChild(element);
+    }
+}
+
+
+};
+
+Ops.Sidebar.NumberInput_v2.prototype = new CABLES.Op();
+CABLES.OPS["c4f3f1d7-de07-4c06-921e-32baeef4fc68"]={f:Ops.Sidebar.NumberInput_v2,objName:"Ops.Sidebar.NumberInput_v2"};
+
+
+
+
+// **************************************************************
+// 
 // Ops.Sidebar.Button_v2
 // 
 // **************************************************************
@@ -3509,6 +3246,730 @@ function handleChildDisconnect(parent, child) {
 
 Ops.Html.AppendChild.prototype = new CABLES.Op();
 CABLES.OPS["dbb2b232-3021-4eb7-bf9b-d194ae8918cb"]={f:Ops.Html.AppendChild,objName:"Ops.Html.AppendChild"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.String.ParseInt_v2
+// 
+// **************************************************************
+
+Ops.String.ParseInt_v2 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    str=op.inString("String",5711),
+    outNum=op.outValue("Number");
+
+str.onChange=function()
+{
+    var num=parseInt(str.get());
+    if(num!=num) num=0;
+    outNum.set(num);
+};
+
+
+
+};
+
+Ops.String.ParseInt_v2.prototype = new CABLES.Op();
+CABLES.OPS["6d208424-daf2-4a2b-874f-daac406c1f66"]={f:Ops.String.ParseInt_v2,objName:"Ops.String.ParseInt_v2"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Sidebar.Toggle_v2
+// 
+// **************************************************************
+
+Ops.Sidebar.Toggle_v2 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const DEFAULT_VALUE_DEFAULT = true;
+
+// inputs
+const parentPort = op.inObject("link");
+const labelPort = op.inString("Text", "Toggle");
+const inputValuePort = op.inValueBool("Input", DEFAULT_VALUE_DEFAULT);
+const setDefaultValueButtonPort = op.inTriggerButton("Set Default");
+const defaultValuePort = op.inValueBool("Default", DEFAULT_VALUE_DEFAULT);
+defaultValuePort.setUiAttribs({ "hidePort": true, "greyout": true });
+const inGreyOut = op.inBool("Grey Out", false);
+const inVisible = op.inBool("Visible", true);
+
+// outputs
+const siblingsPort = op.outObject("childs");
+const valuePort = op.outValue("Value", defaultValuePort.get());
+
+// vars
+const el = document.createElement("div");
+el.classList.add("sidebar__item");
+el.classList.add("sidebar__toggle");
+if (DEFAULT_VALUE_DEFAULT) el.classList.add("sidebar__toggle--active");
+
+el.addEventListener("click", onInputClick);
+const label = document.createElement("div");
+label.classList.add("sidebar__item-label");
+const labelText = document.createTextNode(labelPort.get());
+label.appendChild(labelText);
+el.appendChild(label);
+// var value = document.createElement('div');
+// value.textContent = DEFAULT_VALUE_DEFAULT;
+// value.classList.add('sidebar__item-value-label');
+// el.appendChild(value);
+// var input = document.createElement('div');
+// input.classList.add('sidebar__toggle-input');
+// el.appendChild(input);
+
+
+const icon = document.createElement("div");
+icon.classList.add("icon_toggle");
+el.appendChild(icon);
+
+
+const greyOut = document.createElement("div");
+greyOut.classList.add("sidebar__greyout");
+el.appendChild(greyOut);
+greyOut.style.display = "none";
+
+// events
+parentPort.onChange = onParentChanged;
+labelPort.onChange = onLabelTextChanged;
+defaultValuePort.onChange = onDefaultValueChanged;
+inputValuePort.onChange = onInputValuePortChanged;
+op.onDelete = onDelete;
+setDefaultValueButtonPort.onTriggered = setDefaultValue;
+// op.toWorkNeedsParent('Ops.Sidebar.Sidebar');
+
+function setDefaultValue()
+{
+    const defaultValue = inputValuePort.get();
+    defaultValuePort.set(defaultValue);
+    valuePort.set(defaultValue);
+    if (CABLES.UI && op.isCurrentUiOp()) gui.opParams.show(op); /* update DOM */
+}
+
+function onInputClick()
+{
+    el.classList.toggle("sidebar__toggle--active");
+    if (el.classList.contains("sidebar__toggle--active"))
+    {
+        valuePort.set(true);
+        inputValuePort.set(true);
+        // value.textContent = 'true';
+        icon.classList.add("icon_toggle_true");
+        icon.classList.remove("icon_toggle_false");
+    }
+    else
+    {
+        icon.classList.remove("icon_toggle_true");
+        icon.classList.add("icon_toggle_false");
+
+        valuePort.set(false);
+        inputValuePort.set(false);
+        // value.textContent = 'false';
+    }
+    if (CABLES.UI && op.isCurrentUiOp()) gui.opParams.show(op); /* update DOM */
+}
+
+function onInputValuePortChanged()
+{
+    const inputValue = inputValuePort.get();
+    if (inputValue)
+    {
+        el.classList.add("sidebar__toggle--active");
+        valuePort.set(true);
+        // value.textContent = 'true';
+    }
+    else
+    {
+        el.classList.remove("sidebar__toggle--active");
+        valuePort.set(false);
+        // value.textContent = 'false';
+    }
+}
+
+function onDefaultValueChanged()
+{
+    /*
+    var defaultValue = defaultValuePort.get();
+    if(defaultValue) {
+        el.classList.add('sidebar__toggle--active');
+        valuePort.set(true);
+    } else {
+        el.classList.remove('sidebar__toggle--active');
+        valuePort.set(false);
+    }
+    */
+}
+
+function onLabelTextChanged()
+{
+    const labelText = labelPort.get();
+    label.textContent = labelText;
+    if (CABLES.UI) op.setTitle("Toggle: " + labelText);
+}
+
+function onParentChanged()
+{
+    const parent = parentPort.get();
+    if (parent && parent.parentElement)
+    {
+        parent.parentElement.appendChild(el);
+        siblingsPort.set(null);
+        siblingsPort.set(parent);
+    }
+    else if (el.parentElement) el.parentElement.removeChild(el);
+}
+
+function showElement(el)
+{
+    if (el) el.style.display = "block";
+}
+
+function hideElement(el)
+{
+    if (el) el.style.display = "none";
+}
+
+function onDelete()
+{
+    removeElementFromDOM(el);
+}
+
+function removeElementFromDOM(el)
+{
+    if (el && el.parentNode && el.parentNode.removeChild) el.parentNode.removeChild(el);
+}
+
+inGreyOut.onChange = function ()
+{
+    greyOut.style.display = inGreyOut.get() ? "block" : "none";
+};
+
+inVisible.onChange = function ()
+{
+    el.style.display = inVisible.get() ? "block" : "none";
+};
+
+
+};
+
+Ops.Sidebar.Toggle_v2.prototype = new CABLES.Op();
+CABLES.OPS["98bf9661-6aa4-4c33-970f-ed99428a94aa"]={f:Ops.Sidebar.Toggle_v2,objName:"Ops.Sidebar.Toggle_v2"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.Value.Integer
+// 
+// **************************************************************
+
+Ops.Value.Integer = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+const
+    input = op.inInt("Integer",0),
+    output = op.outNumber("Number out");
+
+input.onChange=function()
+{
+    output.set(Math.floor(input.get()));
+}
+
+};
+
+Ops.Value.Integer.prototype = new CABLES.Op();
+CABLES.OPS["17bc01d7-04ad-4aab-b88b-bb09744c4a69"]={f:Ops.Value.Integer,objName:"Ops.Value.Integer"};
+
+
+
+
+// **************************************************************
+// 
+// Ops.User.alivemachine.MyWebcam
+// 
+// **************************************************************
+
+Ops.User.alivemachine.MyWebcam = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+// todo: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode
+loadDaFun();
+function loadDaFun() {
+   var script = document.createElement('script');
+   script.src = 'https://webrtc.github.io/adapter/adapter-latest.js';
+   var head = document.getElementsByTagName("head")[0];
+   head.appendChild(script);
+}
+const
+    inFacing = op.inSwitch("Facing", ["environment", "user"], "user"),
+    flip = op.inValueBool("flip"),
+    fps = op.inValueInt("fps"),
+    width = op.inValueInt("Width", 640),
+    height = op.inValueInt("Height", 480),
+    inActive = op.inValueBool("Active", true),
+    inStyle = op.inValueEditor("Style", "position:absolute;z-index:9999;", "none"),
+    inCap = op.inTriggerButton("Capture"),
+    textureOut = op.outTexture("texture"),
+    outRatio = op.outValue("Ratio"),
+    available = op.outValue("Available"),
+    outWidth = op.outNumber("Width"),
+    outHeight = op.outNumber("Height"),
+    outEleId = op.outString("Element Id"),
+    outObj = op.outObject("Element"),
+    outClicked = op.outTrigger("Clicked"),
+    outCap = op.outString("Captured");
+
+width.onChange =
+    height.onChange =
+    inFacing.onChange = startWebcam;
+inStyle.onChange = updateStyle;
+inCap.onTriggered=onMouseClick;
+fps.set(30);
+flip.set(true);
+
+const cgl = op.patch.cgl;
+const videoElement = document.createElement("video");
+const eleId = "webcam" + CABLES.uuid();
+if(inActive.get()===false){
+    videoElement.style.display = "none";
+}else{
+    videoElement.style.display = "block";
+}
+videoElement.setAttribute("id", eleId);
+videoElement.setAttribute("autoplay", "");
+videoElement.setAttribute("muted", "");
+videoElement.setAttribute("playsinline", "");
+videoElement.addEventListener("click", onMouseClick);
+
+op.patch.cgl.canvas.parentElement.appendChild(videoElement);
+
+const tex = new CGL.Texture(cgl);
+tex.setSize(8, 8);
+textureOut.set(tex);
+let timeout = null;
+
+let canceled = false;
+
+op.onDelete = removeElement;
+
+function removeElement()
+{
+    if (videoElement) videoElement.remove();
+    clearTimeout(timeout);
+}
+
+
+inActive.onChange = function ()
+{
+    if (inActive.get())
+    {
+        canceled = false;
+        videoElement.style.display = "block";
+        updateTexture();
+    }
+    else
+    {
+        videoElement.style.display = "none";
+        canceled = true;
+    }
+};
+
+fps.onChange = function ()
+{
+    if (fps.get() < 1)fps.set(1);
+    clearTimeout(timeout);
+    timeout = setTimeout(updateTexture, 1000 / fps.get());
+};
+
+function updateTexture()
+{
+    cgl.gl.bindTexture(cgl.gl.TEXTURE_2D, tex.tex);
+    cgl.gl.pixelStorei(cgl.gl.UNPACK_FLIP_Y_WEBGL, flip.get());
+
+    cgl.gl.texImage2D(cgl.gl.TEXTURE_2D, 0, cgl.gl.RGBA, cgl.gl.RGBA, cgl.gl.UNSIGNED_BYTE, videoElement);
+    cgl.gl.bindTexture(cgl.gl.TEXTURE_2D, null);
+
+    if (!canceled) timeout = setTimeout(updateTexture, 1000 / fps.get());
+}
+
+function camInitComplete(stream)
+{
+    tex.videoElement = videoElement;
+    // videoElement.src = window.URL.createObjectURL(stream);
+    videoElement.srcObject = stream;
+    // tex.videoElement=stream;
+    videoElement.onloadedmetadata = function (e)
+    {
+        available.set(true);
+
+        outHeight.set(videoElement.videoHeight);
+        outWidth.set(videoElement.videoWidth);
+
+        tex.setSize(videoElement.videoWidth, videoElement.videoHeight);
+
+        outRatio.set(videoElement.videoWidth / videoElement.videoHeight);
+
+        videoElement.play();
+        outObj.set(videoElement);
+        updateTexture();
+    };
+}
+
+function startWebcam()
+{
+    //removeElement();
+    const constraints = { "audio": false, "video": {} };
+
+    constraints.video.facingMode = inFacing.get();
+    constraints.video.width = width.get();
+    constraints.video.height = height.get();
+
+    //navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+/*
+    if (navigator.getUserMedia)
+    {
+        navigator.getUserMedia(constraints, camInitComplete,
+            function ()
+            {
+                available.set(false);
+                // console.log('error webcam');
+            });
+    }
+    else
+    {
+        // the ios way...
+*/
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(camInitComplete)
+            .catch(function (error)
+            {
+                console.log(error.name + ": " + error.message);
+            });
+//    }
+}
+function updateStyle()
+{
+    if (inStyle.get() != videoElement.style)
+    {
+        videoElement.setAttribute("style", inStyle.get());
+        outObj.set(null);
+        outObj.set(videoElement);
+    }
+}
+var canvas = document.createElement('canvas');
+var ctx = canvas.getContext('2d');
+function onMouseClick()
+{
+   if(inActive.get()){
+    canvas.width = width.get();
+    canvas.height = height.get();
+    ctx.drawImage(videoElement, 0, 0, width.get(),height.get());
+    var b64webcam = canvas.toDataURL('image/png', .1);
+	outCap.set(b64webcam);
+
+    outClicked.trigger();
+    }else{
+        outCap.set('');
+    }
+}
+
+
+updateStyle();
+startWebcam();
+
+
+};
+
+Ops.User.alivemachine.MyWebcam.prototype = new CABLES.Op();
+
+
+
+
+
+// **************************************************************
+// 
+// Ops.User.alivemachine.Boids03
+// 
+// **************************************************************
+
+Ops.User.alivemachine.Boids03 = function()
+{
+CABLES.Op.apply(this,arguments);
+const op=this;
+const attachments={};
+var active = op.inBool("active",true);
+var cheight = op.inInt("height",300);
+var cwidth = op.inInt("width",300);
+var scIn = op.inInt("starlingCount",10);
+var homIn = op.inFloatSlider("homing",1);
+var alIn = op.inFloatSlider("alignment",1);
+var coIn = op.inFloatSlider("cohesion",1);
+var sepIn = op.inFloatSlider("separation",1);
+var sizeIn = op.inFloat("size",1);
+var hcIn = op.inInt("homeChangeInterval",3);
+var speedIn = op.inFloat("speed",1);
+var distIn = op.inFloat("neighbourDistance",400);
+var randhoIn = op.inBool("randomiseHome",true);
+var surfaceIn = op.inFloatSlider("surface",.1);
+var particle = op.inString("image");
+var imgAlpha = op.inFloatSlider("image alpha");
+var hueRot = op.inFloat("HueRotate",0);
+var paint = op.inBool("Paint",0);
+var rt = op.inFloatSlider("rt",1),
+    gt = op.inFloatSlider("gt",0),
+    bt = op.inFloatSlider("bt",1),
+    at = op.inFloatSlider("at",1),
+    blurt = op.inFloatSlider("blurt",1);
+var rb = op.inFloatSlider("rb",1),
+    gb = op.inFloatSlider("gb",0),
+    bb = op.inFloatSlider("bb",1),
+    ab = op.inFloatSlider("ab",1),
+    blurb = op.inFloatSlider("blurb",1);
+var comp=op.inValueSelect("compositing",['source-over','source-in','source-out','source-atop','destination-over','destination-in','destination-out','destination-atop','lighter','copy','xor','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion','hue','saturation','color','luminosity']);
+var inStyle = op.inValueEditor("Style", "position:absolute;z-index:9999;", "none");
+
+var outCanvas=op.outObject("canvas");
+
+comp.set('source-over');
+inStyle.onChange = updateStyle;
+
+op.setPortGroup('Top',[rt,gt,bt,at, blurt]);
+op.setPortGroup('Bottom',[rb,gb,bb,ab, blurb]);
+
+var img = new Image();
+img.crossOrigin = 'Anonymous';
+particle.onChange=reloadPar;
+function reloadPar(){
+    img.src = particle.get();
+}
+var Murmuration = function () {
+  "use strict";
+
+  function s(t, i, e) {
+    void 0 === t && (t = 0), void 0 === i && (i = 0), void 0 === e && (e = 0), this.x = t, this.y = i, this.z = e
+  }
+  s.prototype.getDistanceFrom = function (t) {
+    var i = {};
+    return i.x = this.x - t.x, i.y = this.y - t.y, i.z = this.z - t.z, Math.abs(Math.sqrt(i.x * i.x + i.y * i.y + i.z * i.z))
+  }, s.prototype.normalise = function (t) {
+    var i = Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z);
+    this.x = t * (this.x / i), this.y = t * (this.y / i), this.z = t * (this.z / i)
+  }, s.prototype.add = function (t) {
+    this.x += t.x, this.y += t.y, this.z += t.z
+  }, s.prototype.multiply = function (t) {
+    this.x *= t, this.y *= t, this.z *= t
+  }, s.prototype.reset = function () {
+    this.x = 0, this.y = 0, this.z = 0
+  }, s.prototype.toString = function () {
+    return "<" + this.x + "," + this.y + "," + this.z + ">"
+  };
+
+  function t(t) {
+    var i = this;
+    this.starlingCount = scIn.get(), this.homing = 1, this.alignment = 1, this.cohesion = 1, this.separation = 1, this.randomiseHome = !0, this.homeChangeInterval = 1e3, this.neighbourDistance = 400, this.parentElem = document.body, this.worldWidth = 100, this.worldHeight = 100, this.home = new s(this.worldWidth / 2, this.worldHeight / 2, 0), this.starlings = [], this.homingMod = .024 * this.homing, this.alignmentMod = 18e-5 * this.alignment, this.cohesionMod = 6 * this.cohesion, this.separationMod = 5.994 * this.separation, this.onUpdate = function (t) {}, Object.assign(this, t);
+    for (var e = 0; e < this.starlingCount; e++) this.addStarling();
+    this.randomiseHome && (this._changeHomeFunc = function () {
+      i._changeHome(), setTimeout(i._changeHomeFunc, i.homeChangeInterval)
+    }, this._changeHomeFunc()), this.averageDistance = new s, this.averagePosition = new s, this.averageVelocity = new s, this.homingVelocity = new s;
+  }
+
+  var a = function (s) {
+    function t(t, i, e) {
+      s.call(this, t, i, e), this.zMod = 1e-4, this.velocity = new s(Math.random(), Math.random(), Math.random()), this.maxSpeed = speedIn.get(), this.skill = Math.random() / 10, this.skillVariant = new s
+    }
+    return s && (t.__proto__ = s), ((t.prototype = Object.create(s && s.prototype)).constructor = t).prototype.update = function () {
+      this.skillVariant.x = (Math.random() - .5) * this.skill, this.skillVariant.y = (Math.random() - .5) * this.skill, this.skillVariant.z = (Math.random() - .5) * this.skill, this.velocity.normalise(this.maxSpeed*speedIn.get()), this.velocity.add(this.skillVariant), this.x += this.velocity.x, this.y += this.velocity.y, this.z += this.velocity.z, this.skillVariant.reset()
+    }, t
+  }(s);
+  return t.prototype.addStarling = function () {
+    var t = Math.random() * this.worldWidth / 4 + this.worldWidth / 4,
+      i = Math.random() * this.worldHeight / 4 + this.worldHeight / 4,
+      e = new a(t, i, 0);
+    this.starlings.push(e)
+  }, t.prototype._changeHome = function () {
+    this.home.x = this.worldWidth*surfaceIn.get() * (Math.random()*2-1)+this.worldWidth/2, this.home.y = this.worldHeight*surfaceIn.get() * (Math.random()*2-1)+this.worldHeight/2, this.home.z = .1
+  }, t.prototype.run = function () {
+    var t = this;
+    requestAnimationFrame(function () {
+      if(active.get()==true){ return t.run() }else{return}
+    }), this.updateStarlings(), this.onUpdate(this.starlings)
+  }, t.prototype.alignStarling = function (t) {
+    for (var i = 0, e = 0; e < this.starlingCount; e++) {
+      var s = this.starlings[e];
+      t != s && t.getDistanceFrom(s) < this.neighbourDistance && (this.averageVelocity.x = s.velocity.x, this.averageVelocity.y = s.velocity.y, this.averageVelocity.z = s.velocity.z, i++)
+    }
+    this.averageVelocity.x /= i, this.averageVelocity.y /= i, this.averageVelocity.z /= i, this.averageVelocity.normalise(1), this.averageVelocity.multiply(this.alignmentMod), 0 < i && t.velocity.add(this.averageVelocity), this.averageVelocity.reset()
+  }, t.prototype.cohereStarling = function (t) {
+    for (var i = 0, e = 0; e < this.starlingCount; e++) {
+      var s = this.starlings[e];
+      t != s && (t.getDistanceFrom(s) < this.neighbourDistance && (this.averageDistance.x = s.x - t.x, this.averageDistance.y = s.y - t.y, this.averageDistance.z = s.z - t.z, i++), this.averagePosition.x += s.x, this.averagePosition.y += s.y, this.averagePosition.z += s.z)
+    }
+    this.averagePosition.x /= this.starlings.length - 1, this.averagePosition.y /= this.starlings.length - 1, this.averagePosition.z /= this.starlings.length - 1, this.averageDistance.x /= i, this.averageDistance.y /= i, this.averageDistance.z /= i, this.averageDistance.normalise(1), this.averageDistance.multiply(this.cohesionMod), 0 < i && t.velocity.add(this.averageDistance), this.averageDistance.reset(), this.averagePosition.reset()
+  }, t.prototype.separateStarling = function (t) {
+    for (var i = 0, e = 0; e < this.starlingCount; e++) {
+      var s = this.starlings[e];
+      t != s && t.getDistanceFrom(s) < this.neighbourDistance && (this.averageDistance.x = s.x - t.x, this.averageDistance.y = s.y - t.y, this.averageDistance.z = s.z - t.z, i++)
+    }
+    this.averageDistance.x /= i, this.averageDistance.y /= i, this.averageDistance.z /= i, this.averageDistance.normalise(1), this.averageDistance.multiply(this.separationMod), 0 < i && (t.velocity.x += -1 * this.averageDistance.x, t.velocity.y += -1 * this.averageDistance.y, t.velocity.z += -1 * this.averageDistance.z), this.averageDistance.reset()
+  }, t.prototype.homeStarling = function (t) {
+    this.homingVelocity.x = this.home.x - t.x, this.homingVelocity.y = this.home.y - t.y, this.homingVelocity.z = this.home.z - t.z, this.homingVelocity.normalise(1), this.homingVelocity.multiply(this.homingMod * (10 * Math.random())), t.velocity.add(this.homingVelocity), this.homingVelocity.reset()
+  }, t.prototype.updateStarlings = function () {
+    for (var t = 0; t < sc; t++) {
+      var i = this.starlings[t];
+      this.alignStarling(i), this.cohereStarling(i), this.separateStarling(i), this.homeStarling(i), i.update()
+    }
+  }, t
+}();
+
+
+
+
+    var sc = scIn.get();
+    var size = sizeIn.get();
+	var canvas = document.createElement("canvas");
+	var ctx = canvas.getContext("2d");
+	//canvas.style.backgroundColor = 'grey';
+	canvas.height=cheight.get();
+	canvas.width=cwidth.get();
+	outCanvas.set(canvas);
+
+
+function paintToggle(){
+    if(paint.get()==true){
+        return 0;
+    }else{
+        return 1;
+    }
+}
+
+
+    var murmuration;
+function newmurmur(){
+		 murmuration = new Murmuration({
+			worldWidth: canvas.width,
+			worldHeight: canvas.height,
+			starlingCount: sc,
+			onUpdate: function(starlings) {
+				ctx.clearRect(0, 0, paintToggle()*canvas.width, paintToggle()*canvas.height);
+				for(let i = 0; i < sc; i++) {
+					let scale 	  = ((100 * (starlings[i].z * starlings[i].zMod)))+size;
+					let transform = `scale(${scale < 0 ? 0 : scale})`;
+					let left 	  = `${starlings[i].x}`;
+					let bottom 	  = `${starlings[i].y}`;
+					//Object.assign(letters[i].style,{transform,left,bottom});
+
+					ctx.beginPath();
+					ctx.globalCompositeOperation = comp.get();
+					ctx.arc(left, bottom, scale, 0, Math.PI * 2);
+					//ctx.rect(left, bottom, scale, scale);
+					ctx.globalAlpha = imgAlpha.get();
+					ctx.drawImage(img, left-scale/2, bottom-scale/2, scale, scale);
+
+					var r = lerp(rb.get(), rt.get(), i/sc);
+					var g = lerp(gb.get(), gt.get(), i/sc);
+					var b = lerp(bb.get(), bt.get(), i/sc);
+					var a = lerp(ab.get(), at.get(), i/sc);
+
+					var blur = lerp(blurb.get(), blurt.get(), i/sc)*100;
+					var hr = 0;
+					ctx.filter = 'blur('+blur+'px)';
+					//ctx.filter = 'hue-rotate('+hr+'deg)';
+					ctx.fillStyle = "rgba("+r*255+","+g*255+","+b*255+","+a+")";
+					ctx.fill();
+
+					ctx.closePath();
+				}
+			}
+		});
+	murmuration.run();
+}
+newmurmur();
+
+function lerp(a, b, f) {
+    return (a * (1.0 - f)) + (b * f);
+}
+
+
+
+active.onChange=activate;
+randhoIn.onChange=scIn.onChange=updateCount;
+cheight.onChange=cwidth.onChange=updateStyle;
+surfaceIn.onChange=distIn.onChange=homIn.onChange=alIn.onChange=coIn.onChange=speedIn.onChange=sepIn.onChange=hcIn.onChange=sizeIn.onChange=update;
+
+function activate(){
+    if(active.get()==true){
+        canvas.style.display='block';
+        murmuration.run();
+    }else{
+        canvas.style.display='none';
+    }
+
+}
+function update(){
+    murmuration.homingMod = homIn.get()*.024;
+    murmuration.alignmentMod = alIn.get()*18e-5;
+    murmuration.cohesionMod = coIn.get()*6;
+    murmuration.separationMod = sepIn.get()*5.994;
+    size = sizeIn.get();
+    murmuration.homeChangeInterval = hcIn.get()*1000;
+    murmuration.neighbourDistance = distIn.get();
+
+    //homingVelocity.x = speedIn.get();
+   // homingVelocity.y = speedIn.get();
+}
+function updateCount(){
+    if(sc<0){sc = 0;}else{sc = scIn.get();}
+    if(murmuration.starlings.length < sc){
+        murmuration.addStarling();
+        updateCount();
+    }else if(murmuration.starlings.length > sc){
+        murmuration.starlings.pop();
+        console.log(murmuration.starlings);
+        updateCount();
+    }else{
+        murmuration.starlingCount=sc;
+        console.log(murmuration.starlings.length);
+        murmuration.randomiseHome=randhoIn.get();
+    }
+
+}
+
+function updateStyle()
+{
+    if (inStyle.get() != canvas.style)
+    {
+        canvas.setAttribute("style", inStyle.get());
+    }
+    canvas.height=cheight.get();
+	canvas.width=cwidth.get();
+	murmuration.worldWidth = canvas.width;
+	murmuration.worldHeight = canvas.height;
+	outCanvas.set(canvas);
+}
+updateStyle();
+
+
+
+};
+
+Ops.User.alivemachine.Boids03.prototype = new CABLES.Op();
+
 
 
 window.addEventListener('load', function(event) {
