@@ -1,8 +1,9 @@
 <div align="center">
 <h1 align="center">
-<br>avatar
+<br>The Avatar
 </h1>
-<h3>◦ Elevate your online image.</h3>
+  <img src="https://alivemachine.io/image/galeriehd/avatar03.jpg" />
+<h3>◦ An Avatar for your mood</h3>
 <h3>◦ Developed with the software and tools listed below.</h3>
 
 <p align="center">
@@ -38,6 +39,10 @@
 
 
 ## 📍 Overview
+
+A research on mouvement and impression.
+
+How data can be embodied in mouvement and how mouvement becomes murmuration. This can be plugged into Paiper or other of the maslo software environment and contribute to the weaving of the signal. In the end, the creature that you get will be uniquely reflective of the moment you shared with it.
 
 The project is a basic HTML page that uses the cables.gl library to create a visual avatar. It initializes a canvas and loads the avatar using a JSON patch file. The core value of the project lies in its ability to provide an interactive and visually appealing avatar experience, while offering error handling and callbacks for patch initialization and loading completion. It enhances user engagement and allows for customization and manipulation of variables within the avatar.
 
